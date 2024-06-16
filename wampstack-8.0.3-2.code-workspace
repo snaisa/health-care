@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "../Bitnami/wampstack-8.0.3-2"
+		},
+		{
+			"path": "../Bitnami/wampstack-8.0.3-2/apache2"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": []
+	}
+}

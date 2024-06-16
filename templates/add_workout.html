@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+    <title>운동정보</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>운동정보</h1>
+        <form method="POST">
+            <input type="text" name="name" placeholder="종목" required>
+            <input type="number" name="count" placeholder="횟수" required>
+            <button type="submit">추가</button>
+        </form>
+        <a href="{{ url_for('home') }}">메인으로</a>
+        
+        <h1>카메라</h1>
+        <video id="video" autoplay></video>
+        <div class="controls">
+            <button id="startButton">시작</button>
+            <button id="stopButton">종료</button>
+        </div>
+        <div>
+            <p id="changeCount">횟수: 0</p>
+        </div>
+    </div>
+    <script>
+        const video = document.getElementById('video');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const changeCountElement = document.getElementById('changeCount');
+        let stream;
+        let previousFrame = null;
+        let changeCount = 0;
+        let interval;
+
+        startButton.addEventListener('click', () => {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(mediaStream => {
+                    stream = mediaStream;
+                    video.srcObject = stream;
+                    interval = setInterval(captureImage, 1000); // 1초마다 이미지 캡처
+                })
+                .catch(error => {
+                    console.error('Error accessing media devices.', error);
+                });
+        });
+
+        stopButton.addEventListener('click', () => {
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null;
+                clearInterval(interval);
+
+                fetch('/record_count', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ count: Math.floor(changeCount / 2) })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Count recorded:', data);
+                })
+                .catch(error => console.error('Error:', error));
+
+                changeCount = 0;
+                changeCountElement.innerText = `횟수: ${changeCount}`;
+            }
+        });
+
+        function captureImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const currentFrame = context.getImageData(0, 0, canvas.width, canvas.height);
+
+            if (previousFrame) {
+                let diff = 0;
+                for (let i = 0; i < currentFrame.data.length; i += 4) {
+                    const r = Math.abs(currentFrame.data[i] - previousFrame.data[i]);
+                    const g = Math.abs(currentFrame.data[i + 1] - previousFrame.data[i + 1]);
+                    const b = Math.abs(currentFrame.data[i + 2] - previousFrame.data[i + 2]);
+                    const total = r + g + b;
+                    diff += total;
+                }
+                if (diff > 10000000) { // 변화 감지 임계값 (필요에 따라 조정)
+                    changeCount++;
+                    changeCountElement.innerText = `횟수: ${Math.floor(changeCount / 2)}`;
+                }
+            }
+            previousFrame = currentFrame;
+        }
+    </script>
+</body>
+</html>

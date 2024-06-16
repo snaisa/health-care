@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+    <title>홈</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>환영합니다, {{ current_user.username }}</h1>
+        <a href="{{ url_for('logout') }}">로그아웃</a>
+        <h2>운동 목록</h2>
+        <ul>
+            {% for workout in workouts %}
+                <li>
+                    {{ workout.name }} - 횟수: {{ workout.count }}
+                    <form action="{{ url_for('delete_workout', workout_id=workout.id) }}" method="post" style="display:inline;">
+                        <button type="submit">삭제</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{{ url_for('add_workout') }}">운동 추가</a>
+    </div>
+</body>
+</html>
